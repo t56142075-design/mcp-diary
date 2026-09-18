@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-diary"
+version = "0.1.0"
+description = "MCP diary for human and AI: separate encrypted private zones plus a shared zone, enforced in code"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0",
+    "cryptography>=42",
+]
+
+[project.scripts]
+diary = "mcp_diary.cli:main"
+mcp-diary-server = "mcp_diary.server:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_diary"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

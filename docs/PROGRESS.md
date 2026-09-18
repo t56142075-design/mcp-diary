@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0、1 已完成，下一步进入阶段 2（存储层实现）
+- **当前阶段**：阶段 0、1、2 已完成，下一步进入阶段 3（MCP Server 与 8 个工具）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
 - **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
 - **最后更新**：2026-09-18
@@ -17,6 +17,11 @@
 3. 推送后如把 PAT 嵌入了 remote URL，立即 `git remote set-url origin https://github.com/t56142075-design/mcp-diary.git` 清除。
 
 ## 已完成
+
+### 阶段 2 ✅（2026-09-18）
+- 存储层四模块（zones/models/crypto/storage）+ pyproject.toml + 26 个单元测试全绿
+- 验证了：密文落盘（读库文件二进制找不到明文）、title 列只存占位符、错误口令必失败、篡改必失败、AI 区密钥重读后可解密
+- 测试运行命令与两个本机坑（pytest 临时目录权限、PYTHONPATH）记录在 docs/02-STORAGE.md
 
 ### 阶段 1 ✅（2026-09-18）
 - docs/01-ARCHITECTURE.md 架构定稿：模块划分、全部 API 签名、密钥生命周期表、加密区搜索取舍、隔离测试验收标准、pyproject 要点
@@ -41,11 +46,13 @@
 
 ## 下一步入口
 
-- 阶段 2：实现 `src/mcp_diary/`（zones/models/crypto/storage 四个模块）+ pyproject.toml + test_crypto/test_storage
-- 阶段 2 完成标准：三库可创建，加密区写入读出一致，错误口令抛 WrongPassphraseError，单测通过
-- 依赖装在 managed venv：`C:/Users/26627/.workbuddy/binaries/python/envs/default`
+- 阶段 3：实现 `server.py`（FastMCP + 8 个 ai/shared 工具）+ `test_server_tools.py` 静态断言（工具名不含 user、数量恰 8）+ MCP 接入配置示例（README 更新）
+- 前置：在 managed venv 安装 `mcp` 包，然后 `pip install -e .`
+- 阶段 3 完成标准：server 启动冒烟通过，工具列表断言通过，用户区在 server 进程中零引用（源码静态扫描）
+- venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 
 ## 已知问题 / 阻塞
 
-- GitHub 远程仓库未建（见决策 5），不影响阶段 1-6 本地开发。
+- GitHub 推送需用户提供新 PAT（旧令牌已按用户要求撤销）。推送命令见上方备忘。
+- pytest 临时目录必须用 `--basetemp` 指到项目内 `.pytest-tmp`（系统 Temp 下 pytest 目录权限拒绝）。
 - Windows 环境注意：代码里路径统一用 pathlib，避免反斜杠问题。

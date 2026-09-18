@@ -28,6 +28,9 @@ dist/
 build/
 *.egg-info/
 
+# ===== 测试临时目录 =====
+.pytest-tmp/
+
 # ===== 编辑器与系统 =====
 .vscode/
 .idea/
