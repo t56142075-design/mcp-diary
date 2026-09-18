@@ -16,27 +16,56 @@
 
 开发中。当前进度见 [docs/PROGRESS.md](docs/PROGRESS.md)，全阶段方案见 [docs/00-PLAN.md](docs/00-PLAN.md)。
 
-## 快速开始（占位，阶段 6 完善）
+## 快速开始
 
 ```bash
 git clone <repo-url>
 cd mcp-diary
 cp .env.example .env
-pip install -e .
+pip install -e .          # 需要 Python 3.11+
 ```
 
-MCP 接入示例（Claude Desktop / 其他 MCP 客户端）：
+首次以 MCP 方式启动时会自动生成：
+- `data/ai_private.db`（AI 私密区，AES-256-GCM 加密）
+- `data/shared.db`（公共区）
+- `data/keys/ai_private.key`（AI 区密钥，已被 .gitignore 忽略）
+
+用户私密区 `data/user_private.db` 由 CLI 首次使用时创建，用你的口令加密。
+
+### MCP 接入
+
+Claude Desktop（`claude_desktop_config.json`）：
 
 ```json
 {
   "mcpServers": {
     "diary": {
-      "command": "python",
-      "args": ["-m", "mcp_diary.server"]
+      "command": "mcp-diary-server",
+      "env": {
+        "DIARY_DATA_DIR": "/absolute/path/to/mcp-diary/data",
+        "DIARY_AI_KEY_FILE": "/absolute/path/to/mcp-diary/data/keys/ai_private.key"
+      }
     }
   }
 }
 ```
+
+其他 MCP 客户端（WorkBuddy 等）同样配置 command 为 `mcp-diary-server`（或 `python -m mcp_diary.server`），stdio 传输。
+
+### AI 侧可用的 8 个工具
+
+AI 私密区：`write_ai_private_diary` `read_ai_private_diary` `list_ai_private_diary` `search_ai_private_diary`
+公共区：`write_shared_diary` `read_shared_diary` `list_shared_diary` `search_shared_diary`
+
+不存在任何能读取用户私密区的工具，这一点有测试保证（tests/test_server_tools.py）。
+
+### 端到端冒烟验证
+
+```bash
+python scripts/smoke_stdio.py
+```
+
+以 stdio 协议拉起 server，走完整握手、工具列举、读写往返，并断言 server 从不创建用户区数据库。
 
 ## 隐私与安全的诚实边界
 

@@ -5,9 +5,9 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0、1、2 已完成，下一步进入阶段 3（MCP Server 与 8 个工具）
+- **当前阶段**：阶段 0、1、2、3 已完成，下一步进入阶段 4（用户端 CLI）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
-- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
+- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开；本地有 2 个未推送 commit，需新 PAT）
 - **最后更新**：2026-09-18
 
 ## git 推送操作备忘（Windows 本机重要坑）
@@ -17,6 +17,14 @@
 3. 推送后如把 PAT 嵌入了 remote URL，立即 `git remote set-url origin https://github.com/t56142075-design/mcp-diary.git` 清除。
 
 ## 已完成
+
+### 阶段 3 ✅（2026-09-18）
+- server.py（FastMCP stdio，8 个 ai/shared 工具）+ test_server_tools.py（8 测试）+ scripts/smoke_stdio.py 端到端冒烟
+- 全部 34 个测试通过；渗透测试证明用户区明文在 MCP 全部工具输出中不可达
+- mcp SDK 锁定 `>=1.0,<2`（2.x 改名 FastMCP→MCPServer，暂不跟）
+- models/storage 增加 author 字段（公共区区分作者）
+- README 已含 Claude Desktop 接入示例与工具清单
+- 关键坑：server 必须以 `-m mcp_diary.server` 或入口命令启动，文件直跑相对导入会崩；详情 docs/03-MCP-SERVER.md
 
 ### 阶段 2 ✅（2026-09-18）
 - 存储层四模块（zones/models/crypto/storage）+ pyproject.toml + 26 个单元测试全绿
@@ -46,13 +54,13 @@
 
 ## 下一步入口
 
-- 阶段 3：实现 `server.py`（FastMCP + 8 个 ai/shared 工具）+ `test_server_tools.py` 静态断言（工具名不含 user、数量恰 8）+ MCP 接入配置示例（README 更新）
-- 前置：在 managed venv 安装 `mcp` 包，然后 `pip install -e .`
-- 阶段 3 完成标准：server 启动冒烟通过，工具列表断言通过，用户区在 server 进程中零引用（源码静态扫描）
+- 阶段 4：实现 `cli.py`：`diary write/read/list/search/edit/delete`（用户私密区）+ `diary shared ...`（公共区，author 固定 user）；口令优先级 DIARY_USER_PASSPHRASE > getpass 交互
+- 红线：cli.py 不引用 Zone.AI_PRIVATE 与 load_or_create_server_key，测试做源码静态断言（对称于阶段 3）
+- 阶段 4 完成标准：CLI 全命令手动/测试跑通，隔离断言通过
 - venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 
 ## 已知问题 / 阻塞
 
-- GitHub 推送需用户提供新 PAT（旧令牌已按用户要求撤销）。推送命令见上方备忘。
-- pytest 临时目录必须用 `--basetemp` 指到项目内 `.pytest-tmp`（系统 Temp 下 pytest 目录权限拒绝）。
+- GitHub 推送需用户提供新 PAT（旧令牌已按用户要求撤销）。本地有阶段 2、3 两个 commit 待推。推送命令见上方备忘。
+- pytest 临时目录：`--basetemp="$TEMP/mcp-diary-pytest-$$RANDOM"` 每次全新路径；复用项目内旧目录会被启动清理 + 安全删除保护卡住。
 - Windows 环境注意：代码里路径统一用 pathlib，避免反斜杠问题。

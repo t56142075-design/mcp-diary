@@ -28,6 +28,7 @@ class Entry:
     created_at: datetime = field(default_factory=utc_now)
     updated_at: datetime = field(default_factory=utc_now)
     deleted_at: datetime | None = None
+    author: str = "user"  # 公共区区分人写还是 AI 写；私密区恒为所属主体
 
     def to_row(self, *, body_blob: bytes | str, title_placeholder: str | None = None) -> tuple:
         """转为 INSERT/UPDATE 用的行。加密区传 body_blob=密文与占位标题。"""
@@ -40,6 +41,7 @@ class Entry:
             to_iso(self.created_at),
             to_iso(self.updated_at),
             to_iso(self.deleted_at) if self.deleted_at else None,
+            self.author,
         )
 
     def is_deleted(self) -> bool:

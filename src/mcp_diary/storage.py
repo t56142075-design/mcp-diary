@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS entries (
     tags        TEXT NOT NULL DEFAULT '[]',
     created_at  TEXT NOT NULL,
     updated_at  TEXT NOT NULL,
-    deleted_at  TEXT
+    deleted_at  TEXT,
+    author      TEXT NOT NULL DEFAULT 'user'
 );
 CREATE INDEX IF NOT EXISTS idx_entries_created ON entries(created_at);
 """
@@ -74,7 +75,7 @@ class DiaryStore:
         return entry.to_row(body_blob=entry.body)
 
     def _unseal(self, row: sqlite3.Row) -> Entry:
-        id_, title, body_blob, tags_json, created, updated, deleted = row
+        id_, title, body_blob, tags_json, created, updated, deleted, author = row
         deleted_at = from_iso(deleted) if deleted else None
         if self._key is not None:
             payload = decrypt(self._key, bytes(body_blob))
@@ -90,20 +91,29 @@ class DiaryStore:
             created_at=from_iso(created),
             updated_at=from_iso(updated),
             deleted_at=deleted_at,
+            author=author or "user",
         )
 
     # ---------- CRUD ----------
 
-    def add(self, title: str, body: str, tags: list[str] | None = None) -> Entry:
+    def add(
+        self,
+        title: str,
+        body: str,
+        tags: list[str] | None = None,
+        *,
+        author: str = "user",
+    ) -> Entry:
         entry = Entry(
             id=uuid.uuid4().hex,
             title=title,
             body=body,
             tags=list(tags or []),
+            author=author,
         )
         with self._conn:
             self._conn.execute(
-                "INSERT INTO entries VALUES (?,?,?,?,?,?,?)", self._seal(entry)
+                "INSERT INTO entries VALUES (?,?,?,?,?,?,?,?)", self._seal(entry)
             )
         return entry
 
@@ -159,16 +169,22 @@ class DiaryStore:
         limit: int = 50,
         include_deleted: bool = False,
     ) -> list[Entry]:
+        """date_from/date_to 接受 datetime 或 ISO 8601 字符串。"""
+        def _as_iso(v):
+            if v is None:
+                return None
+            return v if isinstance(v, str) else to_iso(v)
+
         sql = "SELECT * FROM entries"
         conds, params = [], []
         if not include_deleted:
             conds.append("deleted_at IS NULL")
         if date_from is not None:
             conds.append("created_at >= ?")
-            params.append(to_iso(date_from))
+            params.append(_as_iso(date_from))
         if date_to is not None:
             conds.append("created_at <= ?")
-            params.append(to_iso(date_to))
+            params.append(_as_iso(date_to))
         if conds:
             sql += " WHERE " + " AND ".join(conds)
         sql += " ORDER BY created_at DESC LIMIT ?"
