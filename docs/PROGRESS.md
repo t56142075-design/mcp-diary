@@ -5,11 +5,16 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0 已完成，等待用户确认方案后进入阶段 1
+- **当前阶段**：阶段 0、1 已完成，下一步进入阶段 2（存储层实现）
 - **项目路径**：`E:\work space\mcp-diary`（本地 git 仓库已初始化，分支 master）
 - **最后更新**：2026-09-18
 
 ## 已完成
+
+### 阶段 1 ✅（2026-09-18）
+- docs/01-ARCHITECTURE.md 架构定稿：模块划分、全部 API 签名、密钥生命周期表、加密区搜索取舍、隔离测试验收标准、pyproject 要点
+- 关键设计增量：私密区把 title 与 body 一起整体加密（表内 title 存占位符），标题同样不泄露；meta 表存用户库 salt
+- 技术栈已获用户确认（Python + 官方 mcp SDK + SQLite 三库 + AES-GCM + CLI）
 
 ### 阶段 0 ✅（2026-09-18）
 - git 仓库初始化（本地，尚未有 GitHub 远程）
@@ -29,8 +34,9 @@
 
 ## 下一步入口
 
-- 待用户确认技术栈 → 进入阶段 1：写 `docs/01-ARCHITECTURE.md`（模块划分、API 签名、加密细节）
-- 阶段 1 完成标准：架构文档定稿，含每个模块的公开函数签名与密钥生命周期说明
+- 阶段 2：实现 `src/mcp_diary/`（zones/models/crypto/storage 四个模块）+ pyproject.toml + test_crypto/test_storage
+- 阶段 2 完成标准：三库可创建，加密区写入读出一致，错误口令抛 WrongPassphraseError，单测通过
+- 依赖装在 managed venv：`C:/Users/26627/.workbuddy/binaries/python/envs/default`
 
 ## 已知问题 / 阻塞
 
