@@ -33,3 +33,6 @@ build/
 .idea/
 .DS_Store
 Thumbs.db
+
+# 调试日志
+push_log.txt

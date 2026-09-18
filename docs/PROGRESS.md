@@ -6,8 +6,15 @@
 ## 当前状态
 
 - **当前阶段**：阶段 0、1 已完成，下一步进入阶段 2（存储层实现）
-- **项目路径**：`E:\work space\mcp-diary`（本地 git 仓库已初始化，分支 master）
+- **项目路径**：`E:\work space\mcp-diary`（分支 main）
+- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
 - **最后更新**：2026-09-18
+
+## git 推送操作备忘（Windows 本机重要坑）
+
+1. 本机 PortableGit 配置了 `credential.helper=helper-selector`，无交互环境下 git push/fetch/ls-remote 会被它带崩且无任何输出。推送时必须禁用：`git -c credential.helper= push origin main`
+2. 推送凭据：GitHub 连接器的 OAuth 令牌是只读的（403），建仓库和推送要用 PAT（用户会提供，短期有效）。PAT 不写入任何文件，仅一次性用于命令行。
+3. 推送后如把 PAT 嵌入了 remote URL，立即 `git remote set-url origin https://github.com/t56142075-design/mcp-diary.git` 清除。
 
 ## 已完成
 
@@ -30,7 +37,7 @@
 2. 隔离方案：句柄隔离 + 接口最小化 + 纵深加密，三道闸门详见 00-PLAN.md 第三节。
 3. 三个独立库文件而非单库分表：为了让 MCP 进程里彻底不存在用户区路径。
 4. 公共区明文存储，私密区密文存储。
-5. 本机未安装 gh 命令，GitHub 远程仓库需用户创建空仓库后提供地址，或安装 gh 并登录。
+5. GitHub 远程仓库已建成并推送（私有）。WorkBuddy GitHub 连接器令牌只读，写操作用用户提供的短期 PAT。
 
 ## 下一步入口
 
