@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0、1、2、3、4 已完成，下一步进入阶段 5（隔离加固与集成测试）
+- **当前阶段**：阶段 0-5 已完成，下一步进入阶段 6（Docker 打包与 README 完善）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
 - **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
 - **最后更新**：2026-09-18
@@ -17,6 +17,12 @@
 3. 推荐写法：`git -c credential.helper= push https://x-access-token:<PAT>@github.com/t56142075-design/mcp-diary.git main`，一次性 URL 不污染 remote 配置。
 
 ## 已完成
+
+### 阶段 5 ✅（2026-09-18）
+- tests/test_isolation.py：13 个集成测试，权限矩阵六格逐格验证全过
+- 跨区密钥互用验证：用户密钥解不开 AI 库、AI 密钥解不开用户库（纵深加密最后一道闸门）
+- docs/05-SECURITY.md：安全声明 + 威胁模型 + 诚实边界（防得住什么、防不住什么）
+- 全部 57 个测试通过
 
 ### 阶段 4 ✅（2026-09-18）
 - cli.py（argparse，用户私密区 6 命令 + 公共区 4 命令，author 恒 user）+ test_cli.py（10 测试）
@@ -61,9 +67,9 @@
 
 ## 下一步入口
 
-- 阶段 5：隔离加固与集成测试（docs/01-ARCHITECTURE.md 第八节验收标准全量落地）
-- 内容：权限矩阵逐格验证汇总测试、assert_zone_allowed 越界用例（user→ai_private 必拒、ai→user_private 必拒）、加密边界条件（跨区密钥互用必失败）、把 server 与 cli 的渗透测试合并为矩阵式汇总报告
-- 阶段 5 完成标准：新增集成测试全绿，形成一张可写进 05-SECURITY.md 的权限矩阵验证表
+- 阶段 6：Dockerfile（python:3.13-slim，装依赖跑 server）+ docker-compose.yml（挂载 data/ 卷）+ README 完善安装运行 + .mcpb 可选
+- 注意：Docker 场景下 stdio MCP server 的适用性有限（Claude Desktop 本地拉起不需要 Docker），compose 更适合自托管场景，文档里要写清楚两种部署形态
+- 阶段 6 完成标准：Docker 镜像可构建（本机验证），README 达到可发布水平
 - venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 
 ## 已知问题 / 阻塞
