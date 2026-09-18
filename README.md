@@ -14,7 +14,7 @@
 
 ## 状态
 
-开发中。当前进度见 [docs/PROGRESS.md](docs/PROGRESS.md)，全阶段方案见 [docs/00-PLAN.md](docs/00-PLAN.md)。
+核心功能已完成（57 个测试全绿）。进度与阶段文档见 [docs/PROGRESS.md](docs/PROGRESS.md)，安全模型见 [docs/05-SECURITY.md](docs/05-SECURITY.md)。
 
 ## 快速开始
 
@@ -83,26 +83,50 @@ python scripts/smoke_stdio.py
 
 以 stdio 协议拉起 server，走完整握手、工具列举、读写往返，并断言 server 从不创建用户区数据库。
 
+### Docker（可选）
+
+stdio 类 MCP server 主要由宿主 MCP 客户端直接拉起，本地自用时不需要 Docker。需要容器化部署时：
+
+```bash
+docker compose build
+docker run -i -v ./data:/app/data mcp-diary:latest   # 由 MCP 客户端以 stdin/stdout 拉起
+```
+
+全部真实数据（三个库 + 密钥）只落在宿主 `./data` 目录，备份这个目录就是备份全部。
+
 ## 隐私与安全的诚实边界
 
 - 用户私密区内容用你的口令派生密钥做 AES-256-GCM 加密，AI 侧没有口令，拿到文件也无法解密。
 - AI 私密区内容同样加密存储，但密钥由本机 MCP Server 保管。
 - 本地自用场景下，"用户看不到 AI 私密区"只能做到界面与协议层不可见。技术用户可以直接翻到加密后的数据库文件，看到内容需要密钥，但文件的存在无法隐藏。这是本地单机架构的固有边界，请知悉。
+- 用户口令忘了就是忘了，没有后门，数据不可恢复。
+- 完整威胁模型（防得住什么、防不住什么）见 [docs/05-SECURITY.md](docs/05-SECURITY.md)。
 - 任何情况下都不要把 `data/` 目录、`.env`、`*.key` 提交到 git。
 
-## 目录结构（规划）
+## 开发与测试
+
+```bash
+pip install -e ".[dev]"
+pytest                                    # 57 个测试：加密、存储、MCP 工具、CLI、权限矩阵
+python scripts/smoke_stdio.py             # stdio 端到端冒烟
+```
+
+## 目录结构
 
 ```
 mcp-diary/
-├── docs/                # 阶段文档与进度锚点
 ├── src/mcp_diary/
-│   ├── storage.py       # 存储层：按区域隔离的 DiaryStore
-│   ├── crypto.py        # 密钥派生与 AES-GCM 加解密
-│   ├── server.py        # MCP Server（仅 ai/shared 工具）
-│   └── cli.py           # 用户端 CLI（仅 user/shared）
-├── tests/               # 权限矩阵隔离测试
+│   ├── zones.py        # Zone 枚举与权限矩阵（唯一事实源）
+│   ├── models.py       # Entry 数据类
+│   ├── crypto.py       # scrypt 派生 + AES-256-GCM
+│   ├── storage.py      # DiaryStore（单区域单实例）+ open_store 工厂
+│   ├── server.py       # MCP Server（仅 ai/shared 共 8 个工具）
+│   └── cli.py          # 用户端 CLI（仅 user/shared）
+├── tests/              # 57 个测试：加密/存储/MCP工具/CLI/权限矩阵隔离
+├── scripts/smoke_stdio.py  # stdio 端到端冒烟
+├── docs/               # 阶段文档（00-05）与进度锚点
+├── Dockerfile / docker-compose.yml / .dockerignore
 ├── .env.example
-├── Dockerfile           # 阶段 6
 └── README.md
 ```
 

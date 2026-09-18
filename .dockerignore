@@ -1,0 +1,22 @@
+# 数据与密钥绝不进镜像
+data/
+*.db
+*.key
+keys/
+.env
+
+# Python 产物
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.pytest-tmp/
+dist/
+build/
+*.egg-info/
+
+# 本地工具与文档
+.git/
+.gitignore
+docs/
+tests/

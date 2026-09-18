@@ -1,0 +1,19 @@
+services:
+  diary:
+    build: .
+    image: mcp-diary:latest
+    container_name: mcp-diary
+    # stdio MCP server 没有网络端口。自托管场景下通常用
+    # `docker run -i mcp-diary` 由 MCP 客户端以 stdin/stdout 拉起，
+    # compose 在这里主要用于固化数据卷与重建镜像。
+    stdin_open: true
+    tty: false
+    volumes:
+      # 全部真实数据只落在宿主这个目录，备份它就是备份全部
+      - ./data:/app/data
+    environment:
+      - DIARY_DATA_DIR=/app/data
+      - DIARY_AI_KEY_FILE=/app/data/keys/ai_private.key
+      # 口令建议不写在这，CLI 用交互输入；确需免交互再取消注释
+      # - DIARY_USER_PASSPHRASE=
+    restart: "no"
