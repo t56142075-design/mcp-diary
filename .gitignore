@@ -1,0 +1,35 @@
+# ===== 真实日记数据（绝不提交）=====
+data/
+*.db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db-shm
+*.db-wal
+
+# ===== 密钥与凭据（绝不提交）=====
+.env
+.env.*
+!.env.example
+*.key
+keys/
+*.pem
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# ===== 编辑器与系统 =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
