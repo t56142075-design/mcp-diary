@@ -59,6 +59,22 @@ AI 私密区：`write_ai_private_diary` `read_ai_private_diary` `list_ai_private
 
 不存在任何能读取用户私密区的工具，这一点有测试保证（tests/test_server_tools.py）。
 
+### 用户端 CLI
+
+```bash
+diary write --title "随笔" -t 生活      # 写私密日记（正文走 stdin，交互输入行末 . 结束）
+diary list                              # 列私密日记（显示短 id）
+diary read 3f2a1b9c                     # 读一条（支持短 id）
+diary search 关键词
+diary edit 3f2a1b9c --title 新标题
+diary delete 3f2a1b9c                   # 软删除
+
+diary shared write --title "给AI的留言"  # 写公共区（AI 通过 MCP 可读）
+diary shared list
+```
+
+私密区首次使用时设置口令（`DIARY_USER_PASSPHRASE` 环境变量可免交互）。口令只派生密钥、不落盘；忘记口令 = 数据不可恢复，请妥善保管。
+
 ### 端到端冒烟验证
 
 ```bash

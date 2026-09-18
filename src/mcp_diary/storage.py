@@ -118,10 +118,20 @@ class DiaryStore:
         return entry
 
     def get(self, entry_id: str) -> Entry | None:
+        """按 id 读取。支持短 id 前缀：不足 32 位时按前缀匹配，唯一命中才返回。"""
         cur = self._conn.execute(
             "SELECT * FROM entries WHERE id = ?", (entry_id,)
         )
         row = cur.fetchone()
+        if row is None and 0 < len(entry_id) < 32:
+            # 前缀解析：必须唯一命中，歧义则视为未找到（避免误读）
+            like = entry_id.replace("%", r"\%").replace("_", r"\_") + "%"
+            candidates = self._conn.execute(
+                "SELECT * FROM entries WHERE id LIKE ? ESCAPE '\\' LIMIT 2",
+                (like,),
+            ).fetchall()
+            if len(candidates) == 1:
+                row = candidates[0]
         return self._unseal(row) if row else None
 
     def update(
@@ -144,18 +154,23 @@ class DiaryStore:
         existing.updated_at = utc_now()
         title_cell, body_cell, tags_cell = self._seal(existing)[1:4]
         with self._conn:
-            self._conn.execute(
+            cur = self._conn.execute(
                 "UPDATE entries SET title=?, body=?, tags=?, updated_at=? WHERE id=?",
-                (title_cell, body_cell, tags_cell, to_iso(existing.updated_at), entry_id),
+                (title_cell, body_cell, tags_cell, to_iso(existing.updated_at), existing.id),
             )
+        if cur.rowcount == 0:
+            return None
         return existing
 
     def delete(self, entry_id: str) -> bool:
-        """软删除：写 deleted_at。"""
+        """软删除：写 deleted_at。支持短 id 前缀（同 get 的唯一命中规则）。"""
+        resolved = self.get(entry_id)
+        if resolved is None:
+            return False
         with self._conn:
             cur = self._conn.execute(
                 "UPDATE entries SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL",
-                (to_iso(utc_now()), entry_id),
+                (to_iso(utc_now()), resolved.id),
             )
         return cur.rowcount > 0
 

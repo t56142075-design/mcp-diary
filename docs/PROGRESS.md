@@ -5,18 +5,25 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0、1、2、3 已完成，下一步进入阶段 4（用户端 CLI）
+- **当前阶段**：阶段 0、1、2、3、4 已完成，下一步进入阶段 5（隔离加固与集成测试）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
-- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开；本地有 2 个未推送 commit，需新 PAT）
+- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
 - **最后更新**：2026-09-18
 
 ## git 推送操作备忘（Windows 本机重要坑）
 
-1. 本机 PortableGit 配置了 `credential.helper=helper-selector`，无交互环境下 git push/fetch/ls-remote 会被它带崩且无任何输出。推送时必须禁用：`git -c credential.helper= push origin main`
+1. 本机 PortableGit 配置了 `credential.helper=helper-selector`，无交互环境下 git push/fetch/ls-remote 会被它带崩且无任何输出。推送时必须禁用：`git -c credential.helper= push <带PAT的URL或origin> main`
 2. 推送凭据：GitHub 连接器的 OAuth 令牌是只读的（403），建仓库和推送要用 PAT（用户会提供，短期有效）。PAT 不写入任何文件，仅一次性用于命令行。
-3. 推送后如把 PAT 嵌入了 remote URL，立即 `git remote set-url origin https://github.com/t56142075-design/mcp-diary.git` 清除。
+3. 推荐写法：`git -c credential.helper= push https://x-access-token:<PAT>@github.com/t56142075-design/mcp-diary.git main`，一次性 URL 不污染 remote 配置。
 
 ## 已完成
+
+### 阶段 4 ✅（2026-09-18）
+- cli.py（argparse，用户私密区 6 命令 + 公共区 4 命令，author 恒 user）+ test_cli.py（10 测试）
+- 全部 44 个测试通过；对称渗透证明 AI 区明文在 CLI 全命令输出中不可达
+- 修复阶段 2 遗留两 bug：update() WHERE 用错主键（短 id 时不落库）；get/delete 现支持短 id 前缀唯一命中
+- 静态扫描自咬：cli.py 文档字符串提及 AI 密钥函数名被自己的测试扫出，已改写（证明扫描有效）
+- README 已含 CLI 用法示例；详情 docs/04-CLI.md
 
 ### 阶段 3 ✅（2026-09-18）
 - server.py（FastMCP stdio，8 个 ai/shared 工具）+ test_server_tools.py（8 测试）+ scripts/smoke_stdio.py 端到端冒烟
@@ -54,13 +61,13 @@
 
 ## 下一步入口
 
-- 阶段 4：实现 `cli.py`：`diary write/read/list/search/edit/delete`（用户私密区）+ `diary shared ...`（公共区，author 固定 user）；口令优先级 DIARY_USER_PASSPHRASE > getpass 交互
-- 红线：cli.py 不引用 Zone.AI_PRIVATE 与 load_or_create_server_key，测试做源码静态断言（对称于阶段 3）
-- 阶段 4 完成标准：CLI 全命令手动/测试跑通，隔离断言通过
+- 阶段 5：隔离加固与集成测试（docs/01-ARCHITECTURE.md 第八节验收标准全量落地）
+- 内容：权限矩阵逐格验证汇总测试、assert_zone_allowed 越界用例（user→ai_private 必拒、ai→user_private 必拒）、加密边界条件（跨区密钥互用必失败）、把 server 与 cli 的渗透测试合并为矩阵式汇总报告
+- 阶段 5 完成标准：新增集成测试全绿，形成一张可写进 05-SECURITY.md 的权限矩阵验证表
 - venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 
 ## 已知问题 / 阻塞
 
-- GitHub 推送需用户提供新 PAT（旧令牌已按用户要求撤销）。本地有阶段 2、3 两个 commit 待推。推送命令见上方备忘。
+- 无阻塞。推送用一次性 URL 写法（见上方备忘第 3 条），用户给 PAT 即可推。
 - pytest 临时目录：`--basetemp="$TEMP/mcp-diary-pytest-$$RANDOM"` 每次全新路径；复用项目内旧目录会被启动清理 + 安全删除保护卡住。
 - Windows 环境注意：代码里路径统一用 pathlib，避免反斜杠问题。
