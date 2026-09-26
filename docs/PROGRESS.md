@@ -5,10 +5,10 @@
 
 ## 当前状态
 
-- **当前阶段**：阶段 0-6 已完成，剩阶段 7（开源前泄密扫描与发布）
+- **当前阶段**：全部 8 个阶段（0-7）完成，项目收官，v0.1.0 发布
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
-- **远程仓库**：https://github.com/t56142075-design/mcp-diary（私有，发布前做泄密扫描后再转公开）
-- **最后更新**：2026-09-18
+- **远程仓库**：https://github.com/t56142075-design/mcp-diary
+- **最后更新**：2026-09-26
 
 ## git 推送操作备忘（Windows 本机重要坑）
 
@@ -17,6 +17,13 @@
 3. 推荐写法：`git -c credential.helper= push https://x-access-token:<PAT>@github.com/t56142075-design/mcp-diary.git main`，一次性 URL 不污染 remote 配置。
 
 ## 已完成
+
+### 阶段 7 ✅（2026-09-26）
+- git 全历史泄密扫描（令牌/密钥/AWS Key/PEM 模式）：0 命中
+- 版本库敏感文件核查：无 .env、无密钥、无 data/、无数据库文件被跟踪
+- 发布门槛：57/57 测试 + stdio 冒烟全过
+- docs/07-RELEASE.md 记录扫描明细与历史事故处置结论
+- v0.1.0 tag，仓库转公开
 
 ### 阶段 6 ✅（2026-09-18）
 - Dockerfile / docker-compose.yml / .dockerignore（保守标准写法，本机无 Docker 未实测构建）
@@ -72,8 +79,10 @@
 
 ## 下一步入口
 
-- 阶段 7：开源前检查与发布
-- 步骤：1) git 全历史泄密扫描（密钥/令牌/真实日记）2) git ls-files 确认 data/keys/.env 不在版本库 3) 用户确认后仓库转公开 + 打 v0.1.0 tag
+- 项目已收官，无待办。后续可选方向（都不属于原计划）：
+  - Web 界面（用户端从 CLI 升级，隔离逻辑直接复用 storage 层）
+  - mcp SDK 升级 2.x（需迁移 FastMCP → MCPServer 改名）
+  - `.mcpb` 打包分发（需要分发给他人时再做）
 - venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 
 ## 已知问题 / 阻塞
