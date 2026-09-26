@@ -94,6 +94,17 @@ docker run -i -v ./data:/app/data mcp-diary:latest   # 由 MCP 客户端以 stdi
 
 全部真实数据（三个库 + 密钥）只落在宿主 `./data` 目录，备份这个目录就是备份全部。
 
+### 接入 ChatGPT（远程 MCP，可选）
+
+ChatGPT 网页版只支持公网 HTTPS 远程 MCP，不能拉起本地 stdio 服务。项目内置了 streamable HTTP 模式 + Bearer 令牌鉴权，配合 Cloudflare 快速隧道即可接入：
+
+```bash
+# Windows 一键启动（首次先改脚本头部两个路径）
+scripts\start-chatgpt.bat
+```
+
+脚本会拉起本地 server 和隧道，窗口里出现 `https://xxxx.trycloudflare.com` 后，在 ChatGPT 开发者模式中创建自定义连接器，endpoint 填 `https://<隧道域名>/mcp`，鉴权填脚本生成的 Bearer 令牌。详细步骤与限制（电脑需开机在线、隧道域名每次重启会变）见 [docs/08-CHATGPT.md](docs/08-CHATGPT.md)。
+
 ## 隐私与安全的诚实边界
 
 - 用户私密区内容用你的口令派生密钥做 AES-256-GCM 加密，AI 侧没有口令，拿到文件也无法解密。

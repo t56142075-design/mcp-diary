@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-- **当前阶段**：全部 8 个阶段（0-7）完成，项目收官，v0.1.0 发布
+- **当前阶段**：v0.1.0 发布后追加完成了 ChatGPT 远程接入（阶段 8，见 docs/08-CHATGPT.md）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
 - **远程仓库**：https://github.com/t56142075-design/mcp-diary
 - **最后更新**：2026-09-26
@@ -79,9 +79,11 @@
 
 ## 下一步入口
 
-- 项目已收官，无待办。后续可选方向（都不属于原计划）：
+- ChatGPT 接入（阶段 8）已完成：HTTP 模式 + Bearer 鉴权 + Cloudflare 快速隧道，公网写读往返验证通过，详见 docs/08-CHATGPT.md。用户侧一键启动：`scripts/start-chatgpt.bat`（隧道域名每次重启会变，ChatGPT 端需更新 endpoint）。
+- 后续可选方向（都不属于原计划）：
   - Web 界面（用户端从 CLI 升级，隔离逻辑直接复用 storage 层）
   - mcp SDK 升级 2.x（需迁移 FastMCP → MCPServer 改名）
+  - Cloudflare Named Tunnel 固定域名（免费账号可建，免去每次更新 endpoint）
   - `.mcpb` 打包分发（需要分发给他人时再做）
 - venv python 路径：`C:/Users/26627/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
 

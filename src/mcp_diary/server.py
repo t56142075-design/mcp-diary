@@ -5,10 +5,20 @@
 - Zone.AI_PRIVATE 与 Zone.SHARED 之外的任何区域在此进程中不存在；
 - assert_zone_allowed 作为启动期双重保险。
 
-运行：stdio 传输，由 MCP 客户端（Claude Desktop 等）拉起。
+两种运行模式：
+1. stdio（默认）：由本地 MCP 客户端（WorkBuddy / Claude Desktop 等）拉起。
+2. streamable HTTP（设置 DIARY_HTTP_TOKEN 时）：供远程 MCP 客户端
+   （如 ChatGPT 开发者模式自定义连接器）经公网隧道访问，全部请求
+   必须携带 Authorization: Bearer <DIARY_HTTP_TOKEN>，否则 401。
+
 环境变量：
-- DIARY_DATA_DIR   数据目录，默认 ./data
+- DIARY_DATA_DIR    数据目录，默认 ./data
 - DIARY_AI_KEY_FILE AI 区密钥文件，默认 <data_dir>/keys/ai_private.key
+- DIARY_HTTP_TOKEN  Bearer 令牌；设置后启用 HTTP 模式（存 .env，勿提交）
+- DIARY_HTTP_HOST   HTTP 监听地址，默认 127.0.0.1（只暴露给隧道进程）
+- DIARY_HTTP_PORT   HTTP 监听端口，默认 8080
+- DIARY_ALLOWED_HOSTS 逗号分隔的 Host 白名单（隧道域名），未设置时关闭
+  Host 校验（已有 Bearer 令牌鉴权兜底）
 """
 
 from __future__ import annotations
@@ -143,9 +153,70 @@ def search_shared_diary(keyword: str, limit: int = 20) -> str:
     return json.dumps([_entry_dict(e) for e in hits], ensure_ascii=False)
 
 
+class _BearerAuthMiddleware:
+    """ASGI 中间件：校验 Authorization: Bearer <token>，不匹配返回 401。
+
+    用于 HTTP 模式。令牌错与缺失返回同一个 401，不泄露原因。
+    """
+
+    def __init__(self, app, token: str):
+        self._app = app
+        self._expected = f"Bearer {token}".encode()
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            headers = {k.lower(): v for k, v in scope.get("headers", [])}
+            if headers.get(b"authorization") != self._expected:
+                await self._send_unauthorized(send)
+                return
+        await self._app(scope, receive, send)
+
+    @staticmethod
+    async def _send_unauthorized(send) -> None:
+        body = b"unauthorized"
+        await send({"type": "http.response.start", "status": 401,
+                    "headers": [(b"content-type", b"text/plain"),
+                                (b"content-length", str(len(body)).encode())]})
+        await send({"type": "http.response.body", "body": body})
+
+
+def _run_http(token: str) -> None:
+    """streamable HTTP 模式：本机监听，等隧道转发，带令牌鉴权。"""
+    import uvicorn
+    from mcp.server.transport_security import TransportSecuritySettings
+
+    mcp.settings.host = os.environ.get("DIARY_HTTP_HOST", "127.0.0.1")
+    mcp.settings.port = int(os.environ.get("DIARY_HTTP_PORT", "8080"))
+    mcp.settings.stateless_http = True
+
+    # FastMCP 绑定 127.0.0.1 时默认启用 DNS 重绑定防护，Host 白名单只有
+    # localhost，隧道域名（*.trycloudflare.com 等）会被拒 421。
+    # DIARY_ALLOWED_HOSTS 可显式指定白名单；未指定时关闭 Host 校验
+    # （本模式已有 Bearer 令牌鉴权，Host 校验属于冗余层）。
+    allowed = os.environ.get("DIARY_ALLOWED_HOSTS", "").strip()
+    if allowed:
+        hosts = [h.strip() for h in allowed.split(",") if h.strip()]
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=hosts,
+            allowed_origins=[f"https://{h}" for h in hosts],
+        )
+    else:
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=False,
+        )
+
+    app = _BearerAuthMiddleware(mcp.streamable_http_app(), token)
+    uvicorn.run(app, host=mcp.settings.host, port=mcp.settings.port, log_level="info")
+
+
 def main() -> None:
-    """MCP 客户端入口：stdio 传输。"""
-    mcp.run()
+    """MCP 客户端入口：默认 stdio；设置 DIARY_HTTP_TOKEN 时走 HTTP。"""
+    token = os.environ.get("DIARY_HTTP_TOKEN")
+    if token:
+        _run_http(token)
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":
