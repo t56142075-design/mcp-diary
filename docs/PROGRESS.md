@@ -8,13 +8,20 @@
 - **当前阶段**：v0.1.0 发布后追加完成了 ChatGPT 远程接入（阶段 8，见 docs/08-CHATGPT.md）
 - **项目路径**：`E:\work space\mcp-diary`（分支 main）
 - **远程仓库**：https://github.com/t56142075-design/mcp-diary
-- **最后更新**：2026-09-26
+- **最后更新**：2026-10-09（ChatGPT 接入 commit 已推送；git 推送凭据方案修订）
 
-## git 推送操作备忘（Windows 本机重要坑）
+## git 推送操作备忘（Windows 本机重要坑，2026-10-09 修订）
 
-1. 本机 PortableGit 配置了 `credential.helper=helper-selector`，无交互环境下 git push/fetch/ls-remote 会被它带崩且无任何输出。推送时必须禁用：`git -c credential.helper= push <带PAT的URL或origin> main`
-2. 推送凭据：GitHub 连接器的 OAuth 令牌是只读的（403），建仓库和推送要用 PAT（用户会提供，短期有效）。PAT 不写入任何文件，仅一次性用于命令行。
-3. 推荐写法：`git -c credential.helper= push https://x-access-token:<PAT>@github.com/t56142075-design/mcp-diary.git main`，一次性 URL 不污染 remote 配置。
+1. 本机 PortableGit 配置了 `credential.helper=helper-selector`。不带认证的读请求（如 `git fetch`）能正常通过；一旦服务器返回 401（push 必走这条路），git 会调它去取凭据，它试图弹交互窗口，无头环境下进程静默挂死、零输出。诊断特征：`GIT_CURL_VERBOSE=1 GIT_TRACE=1` 能看到 `HTTP/1.1 401 Unauthorized` 与 `www-authenticate: Basic realm="GitHub"` 之后就再无任何日志。
+2. `-c credential.helper='!gh auth git-credential'` 这个写法在本机不可靠：git 通过子 shell 调 gh，子 shell 的 PATH 里找不到 gh，该 helper 静默失败后仍会落回 helper-selector，照旧卡死。不要再用。
+3. 现在可用的写法（本机 gh CLI 已登录账号 t56142075-design，令牌存 keyring，scopes 含 repo）：
+   ```bash
+   TOKEN=$(gh auth token) && git -c credential.helper= push \
+     "https://t56142075-design:${TOKEN}@github.com/t56142075-design/mcp-diary.git" main
+   ```
+   一次性 URL 不污染 remote 配置，令牌不落任何文件。若要遮蔽可能回显的令牌，管道接 `| sed -E 's/gh[opsu]_[A-Za-z0-9]+/TOKEN_HIDDEN/g'`。
+4. 代理层不是病因，排查时别先怀疑它：本机 git 配置了 `http.proxy=127.0.0.1:10808` 走系统代理，fetch 与 `gh api`（含 POST）都能通过。
+5. 历史包袱与修正：早期版本要求用户提供短期 PAT 来推送。gh CLI 接管凭据后，**不必再让用户提供 PAT，也不要在对话里传令牌**。
 
 ## 已完成
 
@@ -75,7 +82,7 @@
 2. 隔离方案：句柄隔离 + 接口最小化 + 纵深加密，三道闸门详见 00-PLAN.md 第三节。
 3. 三个独立库文件而非单库分表：为了让 MCP 进程里彻底不存在用户区路径。
 4. 公共区明文存储，私密区密文存储。
-5. GitHub 远程仓库已建成并推送（私有）。WorkBuddy GitHub 连接器令牌只读，写操作用用户提供的短期 PAT。
+5. GitHub 远程仓库已建成并推送（现已转公开）。WorkBuddy GitHub 连接器令牌只读，写操作改用本机 gh CLI 的账号令牌（`gho_`，存系统 keyring），不再经手用户 PAT。
 
 ## 下一步入口
 
@@ -89,6 +96,6 @@
 
 ## 已知问题 / 阻塞
 
-- 无阻塞。推送用一次性 URL 写法（见上方备忘第 3 条），用户给 PAT 即可推。
+- 无阻塞。推送走 gh CLI 令牌（见上方备忘第 3 条），不再需要用户提供 PAT 或创建新令牌。
 - pytest 临时目录：`--basetemp="$TEMP/mcp-diary-pytest-$$RANDOM"` 每次全新路径；复用项目内旧目录会被启动清理 + 安全删除保护卡住。
 - Windows 环境注意：代码里路径统一用 pathlib，避免反斜杠问题。
